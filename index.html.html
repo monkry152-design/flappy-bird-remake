@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Analytics Beacon | Visitor Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 1.5rem;
+        }
+
+        /* modern glassmorphic card */
+        .container {
+            max-width: 680px;
+            width: 100%;
+            background: rgba(18, 25, 45, 0.65);
+            backdrop-filter: blur(14px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(72, 187, 255, 0.2);
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(72, 187, 255, 0.1) inset;
+            padding: 2rem 2rem 2.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(46, 125, 230, 0.18);
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            color: #8bb9fe;
+            border: 0.5px solid rgba(68, 157, 255, 0.4);
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #F0F5FF 0%, #c0d9ff 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+            margin-bottom: 0.75rem;
+        }
+
+        .sub {
+            color: #a3b8e6;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            border-left: 3px solid #2d7aff;
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+            opacity: 0.85;
+        }
+
+        .info-panel {
+            background: rgba(10, 15, 27, 0.7);
+            border-radius: 1.5rem;
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid rgba(56, 128, 255, 0.25);
+            box-shadow: 0 6px 12px -8px rgba(0,0,0,0.3);
+        }
+
+        .ip-section {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .ip-label {
+            font-weight: 500;
+            color: #8fa6e0;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+        }
+
+        .ip-address {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 1.55rem;
+            font-weight: 600;
+            color: #c9e0ff;
+            word-break: break-all;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 0.25rem 1rem;
+            border-radius: 48px;
+            display: inline-block;
+        }
+
+        .status-message {
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            padding: 0.7rem 1rem;
+            border-radius: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #cbdaf5;
+        }
+
+        .loading-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; transform: scale(0.8);}
+            100% { opacity: 1; transform: scale(1.2);}
+        }
+
+        .success {
+            color: #4ade80;
+            border-left: 3px solid #4ade80;
+            background: rgba(74, 222, 128, 0.08);
+        }
+
+        .error {
+            color: #f97393;
+            border-left: 3px solid #f97393;
+            background: rgba(249, 115, 146, 0.08);
+        }
+
+        .info-note {
+            font-size: 0.75rem;
+            color: #7183ac;
+            margin-top: 1.5rem;
+            text-align: center;
+            border-top: 1px dashed rgba(68, 128, 255, 0.3);
+            padding-top: 1.2rem;
+        }
+
+        button {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #bbd6ff;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #2b6ed7;
+            color: white;
+            border-color: #2b6ed7;
+            box-shadow: 0 2px 8px rgba(43,110,215,0.3);
+        }
+
+        footer {
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            text-align: center;
+            color: #4a5b87;
+        }
+
+        @media (max-width: 550px) {
+            .container { padding: 1.5rem; }
+            h1 { font-size: 1.7rem; }
+            .ip-address { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="badge">
+        <span>🔒 ANALYTICS • BEACON</span>
+    </div>
+    <h1>Visitor insight<br>logger</h1>
+    <div class="sub">
+        Passive session tracking — your IP is securely forwarded to the configured channel.
+    </div>
+
+    <div class="info-panel">
+        <div class="ip-section">
+            <span class="ip-label">🌐 Your public IP</span>
+            <span class="ip-address" id="visitorIpDisplay">—.—.—.—</span>
+        </div>
+        <div id="logStatus" class="status-message">
+            <span class="loading-dot"></span>
+            <span id="statusText">Resolving network details & transmitting...</span>
+        </div>
+        <div style="margin-top: 0.8rem; display: flex; justify-content: flex-end;">
+            <button id="manualRetryBtn" style="font-size:0.75rem;">⟳ Re-send event</button>
+        </div>
+    </div>
+
+    <div class="info-note">
+        ⚡ When you load this page, your IP address, user-agent, and timestamp are logged<br>
+        and forwarded to a remote Discord webhook (secure channel). No personal data stored locally.
+    </div>
+    <footer>
+        • real-time telemetry • privacy aware logging •
+    </footer>
+</div>
+
+<script>
+    // ======================= CONFIGURATION =========================
+    // 🔧 REPLACE THIS WITH YOUR ACTUAL DISCORD WEBHOOK URL
+    // CREATE A WEBHOOK IN YOUR DISCORD SERVER (Server Settings -> Integrations -> Webhook)
+    const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/INSERT_YOUR_WEBHOOK_ID/INSERT_YOUR_WEBHOOK_TOKEN";
+    
+    // Optional: Additional metadata flag to also send a more detailed embed
+    const INCLUDE_USER_AGENT = true;
+    // ================================================================
+
+    // DOM elements
+    const ipDisplaySpan = document.getElementById('visitorIpDisplay');
+    const statusContainer = document.getElementById('logStatus');
+    const statusTextSpan = document.getElementById('statusText');
+    const retryBtn = document.getElementById('manualRetryBtn');
+
+    // Helper to update status UI (loading, success, error)
+    function setStatus(type, message, keepSpinner = false) {
+        // Remove existing status classes
+        statusContainer.classList.remove('success', 'error');
+        // Clear loading dot if needed?
+        const loadingDotElem = statusContainer.querySelector('.loading-dot');
+        if (type === 'loading') {
+            if (!loadingDotElem) {
+                // ensure loading dot exists
+                const newDot = document.createElement('span');
+                newDot.className = 'loading-dot';
+                statusContainer.prepend(newDot);
+            } else {
+                loadingDotElem.style.display = 'inline-block';
+            }
+            statusContainer.classList.remove('success', 'error');
+        } else {
+            if (loadingDotElem) loadingDotElem.style.display = 'none';
+            if (type === 'success') statusContainer.classList.add('success');
+            if (type === 'error') statusContainer.classList.add('error');
+        }
+        statusTextSpan.innerText = message;
+        if (type !== 'loading' && !keepSpinner) {
+            // no extra action
+        }
+    }
+
+    // Helper to send IP + metadata to Discord Webhook
+    async function sendToDiscord(ip, userAgentString, timestampISO) {
+        if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.includes("INSERT_YOUR_WEBHOOK_ID")) {
+            console.warn("⚠️ Webhook URL not configured properly. Please set your Discord webhook URL.");
+            setStatus('error', '❌ Webhook not configured. Edit script with your Discord URL.');
+            return { success: false, error: "missing_webhook_url" };
+        }
+
+        // Build a rich embed message for Discord
+        const formattedTime = new Date(timestampISO).toLocaleString('en-US', { 
+            dateStyle: 'full', 
+            timeStyle: 'medium' 
+        });
+
+        // Additional location / extra fields: we can include simple client hints
+        let extraDetails = `**Timestamp:** ${formattedTime}\n**IP:** ${ip}`;
+        if (INCLUDE_USER_AGENT && userAgentString) {
+            extraDetails += `\n**User-Agent:** \`${userAgentString.substring(0, 500)}\``;
+        }
+        // Include referrer if available (often empty but can be useful)
+        const referrer = document.referrer || "direct / none";
+        extraDetails += `\n**Referrer:** ${referrer.substring(0, 200)}`;
+        extraDetails += `\n**Page:** \`${window.location.href}\``;
+
+        const embedPayload = {
+            embeds: [
+                {
+                    title: "🌍 New Visitor Logged",
+                    color: 0x2b6ed7,
+                    description: "Incoming HTTP request captured",
+                    fields: [
+                        {
+                            name: "📡 Visitor Information",
+                            value: extraDetails,
+                            inline: false
+                        },
+                        {
+                            name: "🕒 Logged (UTC)",
+                            value: `\`${new Date(timestampISO).toUTCString()}\``,
+                            inline: true
+                        },
+                        {
+                            name: "🔐 Source",
+                            value: "Webhook Beacon",
+                            inline: true
+                        }
+                    ],
+                    footer: {
+                        text: "Analytics Logger • IP telemetry"
+                    },
+                    timestamp: new Date().toISOString()
+                }
+            ],
+            username: "IP Logger Bridge",
+            avatar_url: "https://cdn-icons-png.flaticon.com/512/428/428328.png"
+        };
+
+        // optional: add plain text content as fallback
+        const payload = {
+            content: `📢 **Incoming connection** | IP: ${ip}`,
+            ...embedPayload
+        };
+
+        try {
+            const response = await fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (response.ok) {
+                return { success: true, statusCode: response.status };
+            } else {
+                let errorText = await response.text().catch(() => 'unknown error');
+                console.error(`Discord webhook responded with ${response.status}: ${errorText}`);
+                return { success: false, statusCode: response.status, error: errorText };
+            }
+        } catch (netErr) {
+            console.error("Fetch error while sending to discord:", netErr);
+            return { success: false, error: netErr.message };
+        }
+    }
+
+    // Core IP fetch + log to discord
+    async function logVisitorAndSend() {
+        setStatus('loading', '🔍 Discovering your public IP address...', true);
+        
+        // multiple IP services for reliability (fallback)
+        const ipServices = [
+            'https://api.ipify.org?format=json',
+            'https://api.my-ip.io/ip.json',       // returns {"ip": "x.x.x.x"}
+            'https://ipapi.co/json/'               // returns {'ip': ...}
+        ];
+        
+        let fetchedIP = null;
+        let errorMessages = [];
+
+        for (const service of ipServices) {
+            try {
+                setStatus('loading', `📡 Querying ${new URL(service).hostname} ...`, true);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                const response = await fetch(service, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) continue;
+                const data = await response.json();
+                // different services have different structures
+                let ipCandidate = data.ip || data.ip_address || (typeof data === 'object' && data.ip);
+                if (!ipCandidate && service.includes('ipapi.co')) ipCandidate = data.ip;
+                if (ipCandidate && typeof ipCandidate === 'string' && ipCandidate.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|::1?/)) {
+                    fetchedIP = ipCandidate;
+                    break;
+                }
+            } catch (err) {
+                errorMessages.push(`${service} : ${err.message}`);
+                continue;
+            }
+        }
+
+        // final fallback: use webrtc or other? but simple: if nothing, show error
+        if (!fetchedIP) {
+            const fallbackMsg = "Unable to retrieve public IP (CORS/network). Use manual check.";
+            ipDisplaySpan.innerText = "unknown";
+            setStatus('error', `❌ IP detection failed: ${errorMessages.join('; ') || 'All services timeout'}`);
+            // still try to send to discord? No IP -> can't meaningfully log
+            return;
+        }
+
+        // update UI with IP
+        ipDisplaySpan.innerText = fetchedIP;
+        
+        // Collect metadata
+        const userAgent = navigator.userAgent;
+        const timestamp = new Date().toISOString();
+        
+        setStatus('loading', `📤 Transmitting secure ping (${fetchedIP}) → Discord webhook...`, true);
+        
+        // Send to discord
+        const result = await sendToDiscord(fetchedIP, userAgent, timestamp);
+        
+        if (result.success) {
+            setStatus('success', `✅ Successfully logged IP ${fetchedIP} to Discord channel.`, false);
+            // optional: additional success note, automatically clear after few seconds?
+            setTimeout(() => {
+                if (statusTextSpan.innerText.includes('Successfully logged')) {
+                    // keep success but don't override if new action
+                }
+            }, 3000);
+        } else {
+            let errorMsg = `⚠️ Delivery failed (HTTP ${result.statusCode || 'network error'}).`;
+            if (result.error) errorMsg += ` ${result.error.substring(0, 100)}`;
+            setStatus('error', errorMsg, false);
+        }
+    }
+
+    // Re-run logging (manual retry)
+    async function manualRetry() {
+        // reset ip display? keep previous but re-fetch
+        ipDisplaySpan.innerText = "refetching...";
+        await logVisitorAndSend();
+    }
+
+    // Helper to detect if webhook URL is placeholder, show warning in console but still try?
+    function isWebhookPlaceholder() {
+        return DISCORD_WEBHOOK_URL.includes("INSERT_YOUR_WEBHOOK_ID") || DISCORD_WEBHOOK_URL === "https://discord.com/api/webhooks/INSERT_YOUR_WEBHOOK_ID/INSERT_YOUR_WEBHOOK_TOKEN";
+    }
+
+    // Initialization:
+    async function init() {
+        if (isWebhookPlaceholder()) {
+            setStatus('error', '⚠️ Discord Webhook URL not configured. Please replace placeholder with real URL in source code.');
+            ipDisplaySpan.innerText = "🔧 setup required";
+            console.error("Discord webhook not set. Open script and assign DISCORD_WEBHOOK_URL variable.");
+            return;
+        }
+        await logVisitorAndSend();
+    }
+
+    // Attach manual retry button
+    retryBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (isWebhookPlaceholder()) {
+            setStatus('error', '❌ Cannot send: webhook URL placeholder. Edit script first.', false);
+            return;
+        }
+        await manualRetry();
+    });
+
+    // Also log when page visibility changes? optional: not needed, just once on load.
+    // Execute after DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+</script>
+</body>
+</html>
